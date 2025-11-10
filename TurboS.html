@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TurboS Search Engine</title>
+  <!-- Created by Tanbir Molla | TurboS Developer | Hidden Proof ID: 2025-TM-TURBOS -->
+  <style>
+    /* CSS Variables for Themes */
+    :root {
+      --bg-color: #f5f5f5;
+      --text-color: #222;
+      --primary-color: #007bff;
+      --header-bg: #fff;
+      --header-text: #222;
+      --card-bg: #fff;
+      --card-text: #222;
+      --toast-bg: rgba(0, 0, 0, 0.8);
+      --toast-text: #00ffcc;
+      --highlight-bg: #e0f3ff;
+      --highlight-text: #007bff;
+    }
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --text-color: #eee;
+      --primary-color: #1e88e5;
+      --header-bg: #1f1f1f;
+      --header-text: #eee;
+      --card-bg: #1e1e1e;
+      --card-text: #ccc;
+      --toast-bg: rgba(0, 0, 0, 0.8);
+      --toast-text: #00ff88;
+      --highlight-bg: #333;
+      --highlight-text: #1e88e5;
+    }
+    /* Custom theme overrides will be applied by JS updating CSS variables */
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background 0.4s, color 0.4s;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 10px 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .header .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    .header .logo span {
+      color: var(--primary-color);
+    }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .search-box {
+      display: flex;
+      flex: 1;
+      max-width: 600px;
+      margin: 10px auto;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      font-size: 1rem;
+      border: 2px solid var(--primary-color);
+      border-radius: 4px;
+      outline: none;
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+    button {
+      padding: 10px 15px;
+      font-size: 1rem;
+      margin-left: 5px;
+      cursor: pointer;
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: darken(var(--primary-color), 10%);
+    }
+    .toggle-btn, .voice-btn, .theme-selector {
+      background: var(--primary-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      background: var(--header-bg);
+      border-bottom: 1px solid #ccc;
+    }
+    .tab {
+      padding: 10px 15px;
+      cursor: pointer;
+      color: var(--text-color);
+      transition: background 0.3s;
+    }
+    .tab.active {
+      border-bottom: 3px solid var(--primary-color);
+      font-weight: bold;
+    }
+    .content {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 0 10px;
+    }
+    .result-card {
+      background: var(--card-bg);
+      color: var(--card-text);
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 5px solid var(--primary-color);
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      transition: background 0.3s, color 0.3s;
+    }
+    .result-card a {
+      color: var(--primary-color);
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .result-card p {
+      margin: 5px 0;
+    }
+    .ai-answer {
+      background: var(--highlight-bg);
+      color: var(--highlight-text);
+      padding: 15px;
+      margin-bottom: 15px;
+      border-left: 5px solid var(--primary-color);
+      border-radius: 4px;
+    }
+    .loader {
+      display: none;
+      border: 6px solid var(--highlight-bg);
+      border-top: 6px solid var(--primary-color);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    /* Toast Notification */
+    @keyframes toastIn {
+      from { transform: translateY(50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; }
+      to { opacity: 0; transform: translateY(-20px); }
+    }
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: var(--toast-bg);
+      color: var(--toast-text);
+      padding: 12px 18px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      box-shadow: 0 0 10px var(--toast-text);
+      backdrop-filter: blur(5px);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 10000;
+    }
+    .toast.show {
+      animation: toastIn 0.5s ease-out forwards, toastOut 0.5s ease-in 4.5s forwards;
+    }
+    .typing-line {
+      white-space: nowrap;
+      overflow: hidden;
+      border-right: 2px solid var(--toast-text);
+    }
+    /* Placeholder card styles for fake tabs */
+    .placeholder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .placeholder-card {
+      background: var(--card-bg);
+      color: var(--card-text);
+      padding: 10px;
+      border: 1px solid #888;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 120px;
+      text-align: center;
+    }
+    .placeholder-card img {
+      width: 40px;
+      height: 40px;
+      opacity: 0.3;
+      margin-bottom: 8px;
+    }
+    /* Search history & trending */
+    .history-list, .trending-list {
+      list-style: none;
+      padding: 0;
+      margin: 5px 0;
+    }
+    .history-item, .trending-item {
+      padding: 5px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .history-item:hover, .trending-item:hover {
+      background: var(--highlight-bg);
+    }
+    .delete-btn {
+      margin-left: 10px;
+      color: red;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    /* Theme selector dropdown */
+    .theme-selector {
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid var(--primary-color);
+      background: var(--bg-color);
+      color: var(--text-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="header" id="header">
+    <div class="logo">Turbo<span>S</span></div>
+    <div class="header-controls">
+      <button class="voice-btn" id="voiceBtn" title="Voice Search">🎤</button>
+      <select id="themeSelector" class="theme-selector" title="Select Theme"></select>
+      <button class="toggle-btn" id="modeToggle" title="Toggle Dark/Light">🌗</button>
+    </div>
+  </div>
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search anything..." autocomplete="off" />
+    <button id="searchBtn">Search</button>
+  </div>
+  <div class="content" id="content">
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-tab="all">All</div>
+      <div class="tab" data-tab="images">Images</div>
+      <div class="tab" data-tab="news">News</div>
+      <div class="tab" data-tab="videos">Videos</div>
+      <div class="tab" data-tab="maps">Maps</div>
+    </div>
+    <div class="loader" id="loader"></div>
+    <div id="aiAnswer" class="ai-answer" style="display:none;"></div>
+    <div id="results" class="results"></div>
+    <div id="placeholderContainer" style="display:none;"></div>
+    <div id="historyContainer" style="display:none;"></div>
+  </div>  <!-- Toast Notification -->  <div id="toast" class="toast">
+    <div id="toastLine1" class="typing-line"></div>
+    <div id="toastLine2" style="display:none;">Your data is secured and respected.</div>
+  </div>
+  <!-- Typing Sound -->
+  <audio id="typingSound" src="https://www.soundjay.com/button/sounds/button-29.mp3" preload="auto"></audio>  <script>
+    // Hidden proof console log
+    console.log("TurboS created by Tanbir Molla. Proof ID: 2025-TM-TURBOS");
+    // Encoded proof
+    const proofHash = "54616e626972204d6f6c6c612032303235";
+
+    // Theme definitions
+    const themes = {
+      default: { '--primary-color': '#007bff', '--highlight-bg': '#e0f3ff', '--highlight-text': '#007bff' },
+      dark: {},
+      neon: { '--bg-color': '#0f0f0f', '--text-color': '#00ff00', '--primary-color': '#39ff14', '--header-bg': '#111', '--header-text': '#00ff00', '--card-bg': '#1a1a1a', '--card-text': '#00ff00', '--highlight-bg': '#003300', '--highlight-text': '#39ff14' },
+      ocean: { '--bg-color': '#e0f7fa', '--text-color': '#006064', '--primary-color': '#00838f', '--header-bg': '#b2ebf2', '--header-text': '#006064', '--card-bg': '#ffffff', '--card-text': '#006064', '--highlight-bg': '#b2ebf2', '--highlight-text': '#00838f' },
+      retro: { '--bg-color': '#fff8e1', '--text-color': '#5d4037', '--primary-color': '#ff8f00', '--header-bg': '#ffe0b2', '--header-text': '#5d4037', '--card-bg': '#ffecb3', '--card-text': '#5d4037', '--highlight-bg': '#fff3e0', '--highlight-text': '#ff8f00' }
+    };
+    let currentTab = 'all';
+    let lastTheme = localStorage.getItem('theme') || 'light';
+    let currentThemeName = localStorage.getItem('customTheme') || 'default';
+    let recognizing = false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initThemeSystem();
+      loadTheme();
+      initTabs();
+      initSearch();
+      initVoiceSearch();
+      initHistory();
+      initTrending();
+      initToastTrigger();
+    });
+
+    function initThemeSystem() {
+      const selector = document.getElementById('themeSelector');
+      for (let key in themes) {
+        const opt = document.createElement('option'); opt.value = key; opt.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+        selector.appendChild(opt);
+      }
+      selector.value = currentThemeName;
+      selector.addEventListener('change', () => {
+        currentThemeName = selector.value;
+        applyCustomTheme(currentThemeName);
+        localStorage.setItem('customTheme', currentThemeName);
+      });
+    }
+    function applyCustomTheme(name) {
+      const vars = themes[name];
+      if (vars) {
+        for (let prop in vars) {
+          document.documentElement.style.setProperty(prop, vars[prop]);
+        }
+      }
+    }
+    function loadTheme() {
+      if (lastTheme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+      else document.documentElement.removeAttribute('data-theme');
+      applyCustomTheme(currentThemeName);
+    }
+    document.getElementById('modeToggle').addEventListener('click', () => {
+      const el = document.documentElement;
+      const isDark = el.hasAttribute('data-theme');
+      // Trigger toast only on light -> dark in Images tab
+      if (!isDark && currentTab === 'images') showToast();
+      if (isDark) el.removeAttribute('data-theme'); else el.setAttribute('data-theme', 'dark');
+      lastTheme = el.hasAttribute('data-theme') ? 'dark' : 'light';
+      localStorage.setItem('theme', lastTheme);
+    });
+
+    function initTabs() {
+      document.querySelectorAll('.tab').forEach(tabEl => {
+        tabEl.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+          tabEl.classList.add('active');
+          currentTab = tabEl.getAttribute('data-tab');
+          renderTab(currentTab);
+        });
+      });
+      renderTab('all');
+    }
+    function renderTab(tab) {
+      document.getElementById('results').style.display = (tab==='all'?'block':'none');
+      document.getElementById('aiAnswer').style.display = 'none';
+      document.getElementById('placeholderContainer').style.display = (tab==='all'?'none':'block');
+      document.getElementById('placeholderContainer').innerHTML = '';
+      if (tab==='all') {
+        // keep existing search results
+      } else {
+        renderPlaceholderTab(tab);
+      }
+    }
+    function renderPlaceholderTab(tab) {
+      const container = document.getElementById('placeholderContainer');
+      const grid = document.createElement('div'); grid.className='placeholder-grid';
+      for (let i=0; i<30; i++) {
+        const card = document.createElement('div'); card.className='placeholder-card';
+        const img = document.createElement('img');
+        if (tab==='images') img.src=''; else if (tab==='videos') img.src=''; else if (tab==='news') img.src=''; else if (tab==='maps') img.src='';
+        card.appendChild(img);
+        const text = document.createElement('div');
+        if (tab==='images') text.textContent='Image load failed';
+        if (tab==='videos') text.textContent='Video unavailable';
+        if (tab==='news') text.textContent='News unavailable';
+        if (tab==='maps') text.textContent='Map load failed';
+        card.appendChild(text);
+        grid.appendChild(card);
+      }
+      container.appendChild(grid);
+    }
+    function initSearch() {
+      const input = document.getElementById('searchInput');
+      document.getElementById('searchBtn').addEventListener('click', () => performSearch());
+      input.addEventListener('keypress', (e) => { if (e.key==='Enter') performSearch(); });
+    }
+    async function performSearch() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) return;
+      saveToHistory(query);
+      showLoader();
+      clearResults();
+      try {
+        const resp = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1`);
+        const data = await resp.json();
+        hideLoader();
+        renderResults(data, query);
+      } catch (e) {
+        hideLoader(); alert('Error fetching results');
+      }
+    }
+    function showLoader() { document.getElementById('loader').style.display='block'; }
+    function hideLoader() { document.getElementById('loader').style.display='none'; }
+    function clearResults() { document.getElementById('results').innerHTML=''; document.getElementById('aiAnswer').style.display='none'; }
+    function renderResults(data, query) {
+      const resultsEl = document.getElementById('results');
+      let topics = data.RelatedTopics || [];
+      // If nested topics
+      const flat = [];
+      topics.forEach(item => {
+        if (item.Text && item.FirstURL) flat.push(item);
+        else if (item.Topics) item.Topics.forEach(sub=> { if(sub.Text && sub.FirstURL) flat.push(sub); });
+      });
+      if (flat.length===0) {
+        resultsEl.innerHTML='<p>No results found.</p>';
+      } else {
+        // AI summary
+        generateAISummary(flat.slice(0,3));
+        flat.forEach(item => {
+          const card = document.createElement('div'); card.className='result-card';
+          const a = document.createElement('a'); a.href=item.FirstURL; a.target='_blank'; a.textContent=item.Text;
+          card.appendChild(a);
+          resultsEl.appendChild(card);
+        });
+      }
+    }
+    function generateAISummary(topics) {
+      const aiEl = document.getElementById('aiAnswer'); aiEl.innerHTML=''; aiEl.style.display='block';
+      // Combine texts
+      const combined = topics.map(t=>t.Text).join('. ')+'.';
+      // Split into sentences
+      const sentences = combined.split('. ').filter(s=>s.trim());
+      let summary = sentences.slice(0,2).join('. ') + '.';
+      // Highlight first part
+      const strong = document.createElement('strong'); strong.textContent=summary;
+      aiEl.appendChild(strong);
+      const more = document.createElement('div'); more.textContent='Based on top results.'; more.style.marginTop='8px'; aiEl.appendChild(more);
+      // Text-to-Speech
+      speakText(summary);
+    }
+    function speakText(text) {
+      if (!('speechSynthesis' in window)) return;
+      const utter = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    }
+    function initVoiceSearch() {
+      const btn = document.getElementById('voiceBtn');
+      const input = document.getElementById('searchInput');
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) { btn.style.display='none'; return; }
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const rec = new SpeechRec(); rec.lang='en-US'; rec.interimResults=false;
+      btn.addEventListener('click', () => {
+        if (recognizing) { rec.stop(); return; }
+        rec.start(); recognizing=true;
+      });
+      rec.onresult = (e) => {
+        const transcript = e.results[0][0].transcript;
+        input.value = transcript;
+        performSearch();
+      };
+      rec.onend = () => { recognizing=false; };
+    }
+    // Search History
+    function initHistory() {
+      const input = document.getElementById('searchInput');
+      input.addEventListener('focus', showHistoryDropdown);
+    }
+    function saveToHistory(query) {
+      let hist = JSON.parse(localStorage.getItem('turboHistory')||'[]');
+      if (!hist.includes(query)) hist.unshift(query);
+      if (hist.length>20) hist.pop();
+      localStorage.setItem('turboHistory', JSON.stringify(hist));
+    }
+    function showHistoryDropdown() {
+      let hist = JSON.parse(localStorage.getItem('turboHistory')||'[]');
+      const container = document.getElementById('historyContainer');
+      container.innerHTML='';
+      if (hist.length===0) return;
+      const list = document.createElement('ul'); list.className='history-list';
+      hist.forEach(item=>{
+        const li=document.createElement('li'); li.className='history-item'; li.textContent=item;
+        li.addEventListener('click',()=>{ document.getElementById('searchInput').value=item; performSearch(); });
+        const del=document.createElement('span'); del.className='delete-btn'; del.textContent='✕'; del.addEventListener('click',(e)=>{ e.stopPropagation(); removeFromHistory(item); showHistoryDropdown(); });
+        li.appendChild(del);
+        list.appendChild(li);
+      });
+      container.appendChild(list);
+      container.style.display='block';
+    }
+    function removeFromHistory(query) {
+      let hist = JSON.parse(localStorage.getItem('turboHistory')||'[]');
+      hist = hist.filter(q=>q!==query);
+      localStorage.setItem('turboHistory', JSON.stringify(hist));
+    }
+    function initTrending() {
+      // Static trending list for demo
+      const trending = ['News', 'Weather', 'Sports', 'Music', 'Movies', 'Technology', 'Health', 'Education'];
+      const input = document.getElementById('searchInput');
+      input.addEventListener('input', ()=>{
+        // show suggestions if needed
+      });
+      // Could implement suggestion dropdown
+    }
+    // Toast logic
+    function initToastTrigger() {
+      // prepared in toggle
+    }
+    function showToast() {
+      const toast = document.getElementById('toast');
+      const line1 = document.getElementById('toastLine1');
+      const line2 = document.getElementById('toastLine2');
+      const sound = document.getElementById('typingSound');
+      line1.textContent=''; line2.style.display='none'; toast.classList.remove('show');
+      // Typing effect
+      const fullText = '🔒 Crafted with precision by Tanbir';
+      let idx=0;
+      sound.play().catch(()=>{});
+      const interval = setInterval(()=>{
+        line1.textContent += fullText.charAt(idx);
+        idx++;
+        if (idx>=fullText.length) {
+          clearInterval(interval);
+          line2.style.display='block';
+          sound.pause(); sound.currentTime=0;
+        }
+      }, 60);
+      toast.classList.add('show');
+      setTimeout(()=>{ toast.classList.remove('show'); }, 5000);
+    }
+  </script></body>
+</html>
